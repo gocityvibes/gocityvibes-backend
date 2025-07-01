@@ -1,3 +1,4 @@
+
 // Load environment variables from .env file in local development (NOT for Render production)
 // Render will provide environment variables directly.
 require('dotenv').config();
@@ -17,9 +18,10 @@ const openai = new OpenAI({
 });
 
 // Configure CORS
-// IMPORTANT: Replace 'https://your-netlify-frontend-url.netlify.app' with your actual Netlify URL
+// IMPORTANT: Temporarily set to allow *all* origins to get the backend running.
+// We will update this with your specific Netlify URL *after* frontend deployment.
 const corsOptions = {
-    origin: 'https://your-netlify-frontend-url.netlify.app',
+    origin: '*', // This allows all origins for now. We will change this later.
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
     optionsSuccessStatus: 204
@@ -46,3 +48,29 @@ app.post('/chat', async (req, res) => {
             temperature: 0.7,
             max_tokens: 200,
         });
+
+        const botReply = completion.choices[0].message.content;
+        res.json({ reply: botReply });
+
+    } catch (error) {
+        console.error('Error calling OpenAI API:', error);
+        if (error.response && error.response.status) {
+            return res.status(error.response.status).json({
+                error: error.response.data.error.message || `OpenAI API error: ${error.response.status}`
+            });
+        } else if (error.message) {
+            return res.status(500).json({ error: `Internal Server Error: ${error.message}` });
+        } else {
+            return res.status(500).json({ error: 'Failed to get response from AI. Please try again.' });
+        }
+    }
+});
+
+app.get('/', (req, res) => {
+    res.send('Go City Vibes Backend is running!');
+});
+
+app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+});
+
