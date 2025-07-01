@@ -16,7 +16,10 @@ const corsOptions = {
   credentials: true,
   optionsSuccessStatus: 204
 };
-
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Go City Vibes Backend is running on port ${PORT}`);
+});
 
 
    
