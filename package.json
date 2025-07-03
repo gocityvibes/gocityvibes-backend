@@ -1,6 +1,7 @@
 {
-  "name": "gocityvibes-backend",
-  "version": "1.0.1",
+  "name": "gocityvibes-backend-full",
+  "version": "1.0.0",
+  "description": "GoCityVibes Full Backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
