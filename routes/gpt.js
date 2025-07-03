@@ -13,14 +13,20 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ reply: "Invalid input." });
     }
 
-    const completion = await openai.chat.completions.create({
+    const location = req.body.location;
+let locationNote = "";
+if (location && location.latitude && location.longitude) {
+  locationNote = `User is near latitude ${location.latitude}, longitude ${location.longitude}.`;
+}
+
+const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
           role: "system",
           content: "You are a friendly city events concierge who can recommend places anywhere, not just Houston. Return responses in casual tone. If user asks for more results, give 3 more. If results have addresses, include Google Maps links. If a place can be called, include a tel: link."
         },
-        { role: "user", content: message }
+        { role: "user", content: `${message}\n${locationNote}` }
       ]
     });
 
