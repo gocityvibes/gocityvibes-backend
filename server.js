@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -14,29 +15,35 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-const SYSTEM_PROMPT = \`
-You are GoCityVibes, a smart, city-specific concierge.
-Respond only with venues in the user-specified city.
-Include 3 venues per request: [MAP:], [CALL:], [WEB:].
-Categories supported: concerts, sports, movies, hotels, zoos, museums, restaurants.
-Affiliate-friendly and monetized output only.
-\`;
+const SYSTEM_PROMPT = `
+You are GoCityVibes, a smart and strict local concierge. 
+Only return results located in the user's requested city. Never guess cities based on GPS or proximity.
+Always include:
+- [MAP:address|label]
+- [CALL:phone|label]
+- [WEB:url|label]
+Use https://example.com if website is unknown.
+Also include recommendations for local live events, hotels, museums, and tickets when requested.
+You can use static fallback data when live APIs fail.
+`;
 
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
   const city = req.body.city || '';
   const language = req.body.language || 'english';
 
+  const enforceTags = "Each result MUST include [MAP:], [CALL:], and [WEB:]. If unknown, use https://example.com.";
+  const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or nearby cities.`;
+
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: \`City: \${city}
-Language: \${language}
-User Request: \${userMessage}
-Only return results in this city. Always return map, website, and phone in markdown.
-If link unknown, use https://example.com
-\`
+      content: `${cityBlock}
+${enforceTags}
+City: ${city}
+Language: ${language}
+Request: ${userMessage}`
     }
   ];
 
@@ -56,5 +63,5 @@ If link unknown, use https://example.com
 });
 
 app.listen(port, () => {
-  console.log(\`Server running on port \${port}\`);
+  console.log(`GoCityVibes backend running on port ${port}`);
 });
