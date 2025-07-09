@@ -1,8 +1,7 @@
-
 {
   "name": "gocityvibes-backend",
   "version": "1.0.0",
-  "description": "GoCityVibes backend with GPT and API fallback",
+  "description": "Backend for GoCityVibes GPT chatbot",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

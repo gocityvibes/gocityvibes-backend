@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -11,6 +10,7 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
+// Handle CORS preflight request
 app.options('/chat', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -36,26 +36,16 @@ app.post('/chat', async (req, res) => {
   const city = req.body.city || '';
   const language = req.body.language || 'english';
 
-  const apiSummary = \`
-Try to match this request to the correct source:
-- Ticketmaster for concerts and large events
-- Eventbrite for local events
-- Movies from cinema listings (use fallback text for now)
-- Zoo and live music from city guides or fallback to GPT
-If API fails or doesn’t apply, use GPT.
-\`;
+  const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or any nearby cities.`;
 
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: \`
-Forget previous instructions. ONLY use this city: "\${city}".
-Language: \${language}
-Request: \${userMessage}
-\${apiSummary}
-Return results using [MAP:], [CALL:], and [WEB:] format.
-\`
+      content: `${cityBlock}
+City: ${city}
+Language: ${language}
+Request: ${userMessage}`
     }
   ];
 
