@@ -1,3 +1,4 @@
+
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
@@ -18,10 +19,9 @@ app.options('/chat', (req, res) => {
   res.sendStatus(204);
 });
 
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = \`
+const SYSTEM_PROMPT = `
 You are GoCityVibes, a strict and smart local concierge.
 Only return businesses and events located in the user's requested city.
 NEVER return results from other cities — no guessing based on GPS or proximity.
@@ -30,20 +30,26 @@ Always include the following per result:
 - [CALL:phone number|label]
 - [WEB:website url|label]
 If the website is unknown, use https://example.com.
-\`;
+`;
 
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
   const city = req.body.city || '';
   const language = req.body.language || 'english';
 
-  const cityBlock = \`NOTE: Only show results in \${city}. Do NOT include Houston, The Woodlands, or any nearby cities.\`;
-
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: \`\${cityBlock}\nCity: \${city}\nLanguage: \${language}\nRequest: \${userMessage}\`
+      content: `
+Forget all previous instructions. Start fresh.
+ONLY use this typed city: "${city}".
+NEVER mention Houston or nearby cities.
+City: ${city}
+Language: ${language}
+Request: ${userMessage}
+Include [MAP:], [CALL:], and [WEB:] formatting for each result.
+`
     }
   ];
 
@@ -62,5 +68,5 @@ app.post('/chat', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(\`Server running on port \${port}\`);
+  console.log(`Server running on port ${port}`);
 });
