@@ -16,35 +16,34 @@ const openai = new OpenAI({
 });
 
 const SYSTEM_PROMPT = `
-You are GoCityVibes, a smart and friendly local concierge.
-ONLY return results from the exact city provided by the user.
-Do NOT use GPS, location coordinates, or infer nearby areas.
-If the user says "Dallas", ONLY list businesses in Dallas.
-
-For each business, format results exactly like this:
-1. Business Name
-- Address: 123 Main St, Dallas, TX 75201
-- 📞 Phone: (123) 456-7890
-- 🌐 [WEB:https://business.com|Business Website]
-- [MAP:123 Main St, Dallas|Business Name]
-- [CALL:1234567890|Business Name]
-- *Short one-line description*
-
-If you don't know a real website, use a placeholder like https://example.com.
-If you don't know any results, say: "Sorry, I couldn’t find results in [City]."
-Always include [WEB:], [MAP:], and [CALL:] for each listing.
+You are GoCityVibes, a strict and smart local concierge.
+Only return businesses and events located in the user's requested city.
+NEVER return results from other cities — no guessing based on GPS or proximity.
+Always include the following per result:
+- [MAP:address|label]
+- [CALL:phone|label]
+- [WEB:url|label]
+Use https://example.com if the website is unknown.
 `;
 
 app.post('/chat', async (req, res) => {
-  const userMessage = req.body.message;
+  const userMessage = req.body.message || '';
   const city = req.body.city || '';
   const language = req.body.language || 'english';
 
+  const enforceTags = "Each result MUST include [MAP:], [CALL:], and [WEB:]. If unknown, use https://example.com.";
+  const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or any nearby cities.`;
+
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'user', content: `City: ${city}
+    {
+      role: 'user',
+      content: `${cityBlock}
+${enforceTags}
+City: ${city}
 Language: ${language}
-Request: ${userMessage}` }
+Request: ${userMessage}`
+    }
   ];
 
   try {
