@@ -20,15 +20,16 @@ app.options('/chat', (req, res) => {
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const SYSTEM_PROMPT = \`
+const SYSTEM_PROMPT = `
 You are GoCityVibes, a strict and smart local concierge.
-Respond ONLY with businesses and events in the user’s requested city.
-Use real APIs when possible, or fall back to GPT.
-Always format results like this:
-- [MAP:address|label]
+Only return businesses and events located in the user's requested city.
+NEVER return results from other cities — no guessing based on GPS or proximity.
+Always include the following per result:
+- [MAP:full address|label]
 - [CALL:phone number|label]
-- [WEB:website URL|label]
-\`;
+- [WEB:website url|label]
+If the website is unknown, use https://example.com.
+`;
 
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
