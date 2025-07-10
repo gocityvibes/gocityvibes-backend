@@ -31,12 +31,49 @@ Always include the following per result:
 If the website is unknown, use https://example.com.
 `;
 
+
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
   const city = req.body.city || '';
   const language = req.body.language || 'english';
 
   const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or any nearby cities.`;
+
+  const keywords = ['astros', 'concert', 'music', 'festival', 'zoo', 'museum'];
+  const needsEvents = keywords.some(keyword => userMessage.toLowerCase().includes(keyword));
+
+  let liveEventsText = '';
+  if (needsEvents) {
+    try {
+      const ticketmasterRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/events?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
+      const ticketmasterJson = await ticketmasterRes.json();
+
+      const eventbriteRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/eventbrite?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
+      const eventbriteJson = await eventbriteRes.json();
+
+      const allEvents = [...(ticketmasterJson.events || []), ...(eventbriteJson.events || [])].slice(0, 5);
+
+      if (allEvents.length > 0) {
+        liveEventsText = 'Here are some real events I found:
+';
+        allEvents.forEach((e, i) => {
+          liveEventsText += `
+${i + 1}. ${e.name}
+- 🕒 ${e.date} ${e.time}
+- 📍 ${e.venue}, ${e.address}
+- [WEB:${e.url}|Buy Tickets]
+`;
+        });
+        liveEventsText += '
+
+';
+      }
+    } catch (err) {
+      liveEventsText = '⚠️ Could not fetch live events.
+
+';
+    }
+  }
 
   const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
@@ -45,7 +82,7 @@ app.post('/chat', async (req, res) => {
       content: `${cityBlock}
 City: ${city}
 Language: ${language}
-Request: ${userMessage}`
+${liveEventsText}Request: ${userMessage}`
     }
   ];
 
@@ -62,6 +99,7 @@ Request: ${userMessage}`
     res.status(500).json({ reply: '⚠️ Error generating response.' });
   }
 });
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
