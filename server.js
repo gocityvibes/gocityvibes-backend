@@ -66,7 +66,7 @@ app.post('/chat', async (req, res) => {
         });
       }
     } catch (err) {
-      liveEventsText = '⚠️ Could not fetch live events.
+      liveEventsText = `⚠️ Could not fetch live events.\n\n`;
 
 ';
     }
