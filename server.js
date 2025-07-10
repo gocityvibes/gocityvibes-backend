@@ -45,10 +45,10 @@ app.post('/chat', async (req, res) => {
 
   if (needsEvents && city) {
     try {
-      const ticketmasterRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/events?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
+      const ticketmasterRes = await fetch(\`https://gocityvibes-backend-94lo.onrender.com/events?city=\${encodeURIComponent(city)}&keyword=\${encodeURIComponent(userMessage)}\`);
       const ticketmasterJson = await ticketmasterRes.json();
 
-      const eventbriteRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/eventbrite?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
+      const eventbriteRes = await fetch(\`https://gocityvibes-backend-94lo.onrender.com/eventbrite?city=\${encodeURIComponent(city)}&keyword=\${encodeURIComponent(userMessage)}\`);
       const eventbriteJson = await eventbriteRes.json();
 
       const allEvents = [...(ticketmasterJson.events || []), ...(eventbriteJson.events || [])].slice(0, 5);
