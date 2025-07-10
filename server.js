@@ -54,8 +54,8 @@ app.post('/chat', async (req, res) => {
       const allEvents = [...(ticketmasterJson.events || []), ...(eventbriteJson.events || [])].slice(0, 5);
 
       if (allEvents.length > 0) {
-        liveEventsText = 'Here are some real events I found:
-';
+        liveEventsText = `Here are some real events I found:
+`;
         allEvents.forEach((e, i) => {
           liveEventsText += `
 ${i + 1}. ${e.name}
