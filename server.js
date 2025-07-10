@@ -57,16 +57,13 @@ app.post('/chat', async (req, res) => {
         liveEventsText = `Here are some real events I found:
 `;
         allEvents.forEach((e, i) => {
-          liveEventsText += `
-${i + 1}. ${e.name}
+          liveEventsText += `${i + 1}. ${e.name}
 - 🕒 ${e.date} ${e.time}
 - 📍 ${e.venue}, ${e.address}
 - [WEB:${e.url}|Buy Tickets]
+
 `;
         });
-        liveEventsText += '
-
-';
       }
     } catch (err) {
       liveEventsText = '⚠️ Could not fetch live events.
