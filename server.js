@@ -45,29 +45,21 @@ app.post('/chat', async (req, res) => {
 
   if (needsEvents && city) {
     try {
-      const ticketmasterRes = await fetch(\`https://gocityvibes-backend-94lo.onrender.com/events?city=\${encodeURIComponent(city)}&keyword=\${encodeURIComponent(userMessage)}\`);
+      const ticketmasterRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/events?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
       const ticketmasterJson = await ticketmasterRes.json();
 
-      const eventbriteRes = await fetch(\`https://gocityvibes-backend-94lo.onrender.com/eventbrite?city=\${encodeURIComponent(city)}&keyword=\${encodeURIComponent(userMessage)}\`);
+      const eventbriteRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/eventbrite?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
       const eventbriteJson = await eventbriteRes.json();
 
       const allEvents = [...(ticketmasterJson.events || []), ...(eventbriteJson.events || [])].slice(0, 5);
       if (allEvents.length > 0) {
-        liveEventsText += `Here are some real events I found:
-`;
+        liveEventsText += `Here are some real events I found:\n`;
         allEvents.forEach((e, i) => {
-          liveEventsText += `${i + 1}. ${e.name}
-- 🕒 ${e.date} ${e.time}
-- 📍 ${e.venue}, ${e.address}
-- [WEB:${e.url}|Buy Tickets]
-
-`;
+          liveEventsText += `${i + 1}. ${e.name}\n- 🕒 ${e.date} ${e.time}\n- 📍 ${e.venue}, ${e.address}\n- [WEB:${e.url}|Buy Tickets]\n\n`;
         });
       }
     } catch {
-      liveEventsText += `⚠️ Could not fetch live events.
-
-`;
+      liveEventsText += `⚠️ Could not fetch live events.\n\n`;
     }
   }
 
@@ -75,10 +67,7 @@ app.post('/chat', async (req, res) => {
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `${cityBlock}
-City: ${city}
-Language: ${language}
-${liveEventsText}Request: ${userMessage}`
+      content: `${cityBlock}\nCity: ${city}\nLanguage: ${language}\n${liveEventsText}Request: ${userMessage}`
     }
   ];
 
