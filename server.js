@@ -1,15 +1,16 @@
-
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const OpenAI = require('openai');
 require('dotenv').config();
+
 const app = express();
-const port = process.env.PORT;
+const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
+// Handle CORS preflight request
 app.options('/chat', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -30,6 +31,7 @@ Always include the following per result:
 If the website is unknown, use https://example.com.
 `;
 
+
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
   const city = req.body.city || '';
@@ -39,9 +41,9 @@ app.post('/chat', async (req, res) => {
 
   const keywords = ['astros', 'concert', 'music', 'festival', 'zoo', 'museum'];
   const needsEvents = keywords.some(keyword => userMessage.toLowerCase().includes(keyword));
-
   let liveEventsText = '';
-  if (needsEvents) {
+
+  if (needsEvents && city) {
     try {
       const ticketmasterRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/events?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
       const ticketmasterJson = await ticketmasterRes.json();
@@ -50,9 +52,8 @@ app.post('/chat', async (req, res) => {
       const eventbriteJson = await eventbriteRes.json();
 
       const allEvents = [...(ticketmasterJson.events || []), ...(eventbriteJson.events || [])].slice(0, 5);
-
       if (allEvents.length > 0) {
-        liveEventsText = `Here are some real events I found:
+        liveEventsText += `Here are some real events I found:
 `;
         allEvents.forEach((e, i) => {
           liveEventsText += `${i + 1}. ${e.name}
@@ -63,10 +64,10 @@ app.post('/chat', async (req, res) => {
 `;
         });
       }
-    } catch (err) {
-      liveEventsText = `⚠️ Could not fetch live events.
+    } catch {
+      liveEventsText += '⚠️ Could not fetch live events.
 
-`;
+';
     }
   }
 
@@ -95,19 +96,30 @@ ${liveEventsText}Request: ${userMessage}`
   }
 });
 
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+
+
+const axios = require('axios');
+
+// Ticketmaster Events API
 app.get('/events', async (req, res) => {
-  const axios = await import('axios').then(mod => mod.default);
   const city = req.query.city || 'Houston';
   const keyword = req.query.keyword || '';
+
   try {
     const response = await axios.get('https://app.ticketmaster.com/discovery/v2/events.json', {
       params: {
-        apikey: process.env.TICKETMASTER_API_KEY,
+        apikey: 'pDApdFiTNEOuWyCAsgIwfxwNnlRzVpVy',
         city,
         keyword,
         size: 5
       }
     });
+
     const events = response.data._embedded?.events || [];
     const formatted = events.map(evt => ({
       name: evt.name,
@@ -117,19 +129,23 @@ app.get('/events', async (req, res) => {
       date: evt.dates.start.localDate,
       time: evt.dates.start.localTime
     }));
+
     res.json({ events: formatted });
-  } catch {
+  } catch (err) {
     res.status(500).json({ error: 'Failed to fetch Ticketmaster events' });
   }
 });
 
+// Eventbrite Events API
 app.get('/eventbrite', async (req, res) => {
-  const axios = await import('axios').then(mod => mod.default);
   const city = req.query.city || 'Houston';
   const keyword = req.query.keyword || '';
+
   try {
     const response = await axios.get('https://www.eventbriteapi.com/v3/events/search/', {
-      headers: { Authorization: `Bearer ${process.env.EVENTBRITE_API_TOKEN}` },
+      headers: {
+        Authorization: 'Bearer EKUQE6HEO3N2K64RJ3FN'
+      },
       params: {
         'location.address': city,
         q: keyword,
@@ -138,6 +154,7 @@ app.get('/eventbrite', async (req, res) => {
         page_size: 5
       }
     });
+
     const events = response.data.events || [];
     const formatted = events.map(evt => ({
       name: evt.name.text,
@@ -147,12 +164,9 @@ app.get('/eventbrite', async (req, res) => {
       date: evt.start.local.split('T')[0],
       time: evt.start.local.split('T')[1]
     }));
+
     res.json({ events: formatted });
-  } catch {
+  } catch (err) {
     res.status(500).json({ error: 'Failed to fetch Eventbrite events' });
   }
-});
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
 });
