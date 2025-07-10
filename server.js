@@ -33,28 +33,43 @@ If the website is unknown, use https://example.com.
 
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
-
-    // 🚀 Inject live Ticketmaster events for Astros/game queries
-    if (/astros|astros tickets|astros game/i.test(userMessage)) {
-        try {
-            const eventRes = await fetch(`${req.protocol}://${req.get('host')}/events?city=${encodeURIComponent(city)}&keyword=astros`);
-            const eventData = await eventRes.json();
-            if (eventData.events && eventData.events.length > 0) {
-                const formatted = eventData.events.map(e =>
-                  `- 🗓️ ${e.date} ${e.time} – ${e.name} at ${e.venue} [🎟️ Buy Tickets](${e.url})`
-                ).join("\n");
-                return res.json({ reply: `🎉 Here's what's coming up for the Astros:\n${formatted}` });
-            }
-        } catch (e) {
-            console.error("Event fetch failed:", e);
-        }
-    }
-      const city = req.body.city || '';
+  const city = req.body.city || '';
   const language = req.body.language || 'english';
 
   const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or any nearby cities.`;
 
+  
+  let ticketmasterData = null;
+  let eventsSummary = '';
+  try {
+    const ticketRes = await axios.get('https://app.ticketmaster.com/discovery/v2/events.json', {
+      params: {
+        apikey: process.env.TICKETMASTER_API_KEY,
+        city,
+        keyword: userMessage,
+        size: 5,
+        sort: 'date,asc'
+      }
+    });
+    const events = ticketRes.data._embedded?.events || [];
+    if (events.length > 0) {
+      const formatted = events.map(evt => {
+        const name = evt.name;
+        const url = evt.url;
+        const venue = evt._embedded.venues[0].name;
+        const address = evt._embedded.venues[0].address.line1;
+        const date = evt.dates.start.localDate;
+        const time = evt.dates.start.localTime;
+        return `${name} at ${venue}, ${address} on ${date} at ${time}. [WEB:${url}|Buy Tickets]`;
+      });
+      eventsSummary = formatted.join('<br>');
+    }
+  } catch (e) {
+    console.error("Ticketmaster fetch error", e.message);
+  }
+
   const messages = [
+
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
