@@ -31,7 +31,6 @@ Always include the following per result:
 If the website is unknown, use https://example.com.
 `;
 
-
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
   const city = req.body.city || '';
@@ -39,35 +38,23 @@ app.post('/chat', async (req, res) => {
 
   const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or any nearby cities.`;
 
-  const keywords = ['astros', 'concert', 'music', 'festival', 'zoo', 'museum'];
-  const needsEvents = keywords.some(keyword => userMessage.toLowerCase().includes(keyword));
-  let liveEventsText = '';
+  
+        if (ticketmasterData && ticketmasterData.events && ticketmasterData.events.length > 0) {
+            liveEventsText = ticketmasterData.events.map(ev =>
+              `🎤 ${ev.name}\n📍 ${ev.venue}, ${ev.address}\n🗓️ ${ev.date} at ${ev.time}\n🔗 ${ev.url}`
+            ).join('\n\n');
+            liveEventsText += `\n\n🎟️ Want to go? Tap the links above to buy tickets now!`;
+        }
+    
 
-  if (needsEvents && city) {
-    try {
-      const ticketmasterRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/events?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
-      const ticketmasterJson = await ticketmasterRes.json();
-
-      const eventbriteRes = await fetch(`https://gocityvibes-backend-94lo.onrender.com/eventbrite?city=${encodeURIComponent(city)}&keyword=${encodeURIComponent(userMessage)}`);
-      const eventbriteJson = await eventbriteRes.json();
-
-      const allEvents = [...(ticketmasterJson.events || []), ...(eventbriteJson.events || [])].slice(0, 5);
-      if (allEvents.length > 0) {
-        liveEventsText += `Here are some real events I found:\n`;
-        allEvents.forEach((e, i) => {
-          liveEventsText += `${i + 1}. ${e.name}\n- 🕒 ${e.date} ${e.time}\n- 📍 ${e.venue}, ${e.address}\n- [WEB:${e.url}|Buy Tickets]\n\n`;
-        });
-      }
-    } catch {
-      liveEventsText += `⚠️ Could not fetch live events.\n\n`;
-    }
-  }
-
-  const messages = [
+const messages = [
     { role: 'system', content: SYSTEM_PROMPT },
     {
       role: 'user',
-      content: `${cityBlock}\nCity: ${city}\nLanguage: ${language}\n${liveEventsText}Request: ${userMessage}`
+      content: `${cityBlock}
+City: ${city}
+Language: ${language}
+Request: ${userMessage}`
     }
   ];
 
@@ -84,7 +71,6 @@ app.post('/chat', async (req, res) => {
     res.status(500).json({ reply: '⚠️ Error generating response.' });
   }
 });
-
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
