@@ -33,7 +33,23 @@ If the website is unknown, use https://example.com.
 
 app.post('/chat', async (req, res) => {
   const userMessage = req.body.message || '';
-  const city = req.body.city || '';
+
+    // 🚀 Inject live Ticketmaster events for Astros/game queries
+    if (/astros|astros tickets|astros game/i.test(userMessage)) {
+        try {
+            const eventRes = await fetch(`${req.protocol}://${req.get('host')}/events?city=${encodeURIComponent(city)}&keyword=astros`);
+            const eventData = await eventRes.json();
+            if (eventData.events && eventData.events.length > 0) {
+                const formatted = eventData.events.map(e =>
+                  `- 🗓️ ${e.date} ${e.time} – ${e.name} at ${e.venue} [🎟️ Buy Tickets](${e.url})`
+                ).join("\n");
+                return res.json({ reply: `🎉 Here's what's coming up for the Astros:\n${formatted}` });
+            }
+        } catch (e) {
+            console.error("Event fetch failed:", e);
+        }
+    }
+      const city = req.body.city || '';
   const language = req.body.language || 'english';
 
   const cityBlock = `NOTE: Only show results in ${city}. Do NOT include Houston, The Woodlands, or any nearby cities.`;
