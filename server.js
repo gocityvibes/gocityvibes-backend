@@ -1,4 +1,5 @@
 
+
 async function getEventbriteEvents(city) {
   const url = `https://www.eventbriteapi.com/v3/events/search/?q=events&location.address=${encodeURIComponent(city)}&token=${process.env.EVENTBRITE_TOKEN}&expand=venue`;
   try {
@@ -6,11 +7,11 @@ async function getEventbriteEvents(city) {
     const data = await res.json();
     if (data.events) {
       return data.events.map(event => ({
-        name: event.name.text,
-        date: event.start.local.split('T')[0],
-        address: event.venue?.address?.localized_address_display || '',
-        phone: '', // Eventbrite doesn't typically provide phone
-        website: event.url
+        name: event.name?.text || 'Unnamed Event',
+        date: event.start?.local?.split('T')[0] || '',
+        address: event.venue?.address?.localized_address_display || 'Address not available',
+        phone: '', // Eventbrite does not return phone
+        website: event.url || 'https://eventbrite.com'
       }));
     }
   } catch (err) {
@@ -18,6 +19,12 @@ async function getEventbriteEvents(city) {
   }
   return [];
 }
+  } catch (err) {
+    console.error('Eventbrite fetch error:', err);
+  }
+  return [];
+}
+
 
 
 
@@ -28,13 +35,18 @@ async function getTicketmasterEvents(city, keyword) {
     const data = await res.json();
     if (data._embedded && data._embedded.events) {
       return data._embedded.events.map(event => ({
-        name: event.name,
-        date: event.dates.start.localDate,
-        address: event._embedded.venues[0].address?.line1 || '',
-        phone: event._embedded.venues[0].boxOfficeInfo?.phoneNumberDetail || '',
-        website: event.url
+        name: event.name || 'Unnamed Event',
+        date: event.dates?.start?.localDate || '',
+        address: event._embedded?.venues?.[0]?.address?.line1 || 'Address not available',
+        phone: event._embedded?.venues?.[0]?.boxOfficeInfo?.phoneNumberDetail || 'Phone not available',
+        website: event.url || 'https://ticketmaster.com'
       }));
     }
+  } catch (err) {
+    console.error('Ticketmaster fetch error:', err);
+  }
+  return [];
+}
   } catch (err) {
     console.error('Ticketmaster fetch error:', err);
   }
