@@ -113,3 +113,14 @@ app.post('/events', async (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
+
+app.get('/events', async (req, res) => {
+  const city = req.query.city || 'Houston';
+  const keyword = req.query.keyword || '';
+
+  const ticketmasterEvents = await getTicketmasterEvents(city, keyword);
+  const eventbriteEvents = await getEventbriteEvents(city);
+
+  res.json([...ticketmasterEvents, ...eventbriteEvents]);
+});
