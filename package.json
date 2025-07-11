@@ -1,5 +1,6 @@
+
 {
-  "name": "gocityvibes-backend",
+  "name": "gcv-backend",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
@@ -7,9 +8,6 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "openai": "^4.19.0",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5"
   }
 }

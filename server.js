@@ -1,67 +1,59 @@
 
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const OpenAI = require('openai');
 const app = express();
-const port = process.env.PORT || 10000;
-
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const PORT = process.env.PORT || 10000;
 
-app.options('/chat', (_, res) => {
-  res.set('Access-Control-Allow-Origin', '*');
-  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.set('Access-Control-Allow-Headers', 'Content-Type');
-  res.sendStatus(204);
-});
+function isVagueCity(city) {
+  const vagueCities = ['Smithville', 'Springfield', 'Jackson', 'Greenville'];
+  return vagueCities.includes(city.trim().toLowerCase());
+}
 
-app.post('/chat', async (req, res) => {
+app.post('/chat', (req, res) => {
   const { message, city } = req.body;
-  const systemPrompt = `
-You are GoCityVibes, an expert local concierge.
 
-Use ONLY real events and businesses. Include the following in every response:
-- For each item: name, description, address
-- Add these buttons for each item:
-  - [MAP:address|View Map]
-  - [CALL:phone number|Call]
-  - [WEB:website URL|Visit Website]
-  - [RIDE:https://www.uber.com/?ref=YOUR_UBER_CODE|Get a Ride]
-  - If it's a ticketed event, add:
-    - [TICKET:https://ticketmaster.com/example?affiliate=YOUR_TICKETMASTER_CODE|Buy Tickets]
-
-Respond in clear Markdown formatting. Keep tone friendly and local.
-
-Example:
-1. **Pappas Bros. Steakhouse**
-- 📍 123 Main St, Houston, TX
-- 📞 (713) 555-1234
-- 🌐 [Visit Website](https://pappasbros.com)
-- 🗺️ [View Map](https://www.google.com/maps/search/?api=1&query=Pappas+Bros+Steakhouse,+Houston)
-- 📞 [Call](tel:+17135551234)
-- 🚗 [Get a Ride](https://www.uber.com/?ref=YOUR_UBER_CODE)
-`;
-
-  try {
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: `${message} in ${city}` }
-      ]
-    });
-
-    res.json({ reply: completion.choices[0].message.content });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error processing request');
+  if (!city) {
+    return res.json({ reply: "Please tell me which city and country you're in!" });
   }
+
+  if (isVagueCity(city)) {
+    return res.json({ reply: "There are a few places called that! What state or country are you in?" });
+  }
+
+  let reply = "";
+
+  if (/steak|restaurant/i.test(message)) {
+    reply = "🥩 Absolutely! Here are the top steak restaurants in " + city + ":
+
+" +
+      "1. **Steakhouse 101** - 🔗 [Website](https://your-affiliate-link.com/steakhouse)
+" +
+      "2. **Prime Grill** - 📞 [Call](tel:+123456789)
+" +
+      "3. **The Meat Co.** - 🗺️ [Map](https://maps.google.com/?q=steak+" + encodeURIComponent(city) + ")";
+  } else if (/astros|tickets|baseball/i.test(message)) {
+    reply = "⚾ Absolutely! Houston Astros tickets available:
+
+" +
+      "1. **Minute Maid Park** - 🎟️ [Buy Tickets](https://your-affiliate-ticket-link.com/astros)
+" +
+      "2. Need a ride? 🚗 [Book an Uber](https://your-affiliate-uber-link.com)";
+  } else {
+    reply = "🎉 You got it! Let me dig up the best options in " + city + " for that. Stay tuned...";
+  }
+
+  return res.json({ reply });
 });
 
-app.listen(port, () => {
-  console.log(`GoCityVibes backend running on port ${port}`);
+app.post('/signup', (req, res) => {
+  const { businessName, phone, email, city } = req.body;
+  console.log("📥 New Business Signup:", { businessName, phone, email, city });
+  res.json({ message: "Thanks! Our team will reach out shortly." });
+});
+
+app.listen(PORT, () => {
+  console.log(`✅ GCV Backend running on port ${PORT}`);
 });
