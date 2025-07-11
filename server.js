@@ -1,5 +1,6 @@
 
 
+
 async function getEventbriteEvents(city) {
   const url = `https://www.eventbriteapi.com/v3/events/search/?q=events&location.address=${encodeURIComponent(city)}&token=${process.env.EVENTBRITE_TOKEN}&expand=venue`;
   try {
@@ -14,6 +15,11 @@ async function getEventbriteEvents(city) {
         website: event.url || 'https://eventbrite.com'
       }));
     }
+  } catch (err) {
+    console.error('Eventbrite fetch error:', err);
+  }
+  return [];
+}
   } catch (err) {
     console.error('Eventbrite fetch error:', err);
   }
