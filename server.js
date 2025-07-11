@@ -8,7 +8,7 @@ app.use(express.json());
 const PORT = process.env.PORT || 10000;
 
 function isVagueCity(city) {
-  const vagueCities = ['Smithville', 'Springfield', 'Jackson', 'Greenville'];
+  const vagueCities = ['smithville', 'springfield', 'jackson', 'greenville'];
   return vagueCities.includes(city.trim().toLowerCase());
 }
 
@@ -26,23 +26,18 @@ app.post('/chat', (req, res) => {
   let reply = "";
 
   if (/steak|restaurant/i.test(message)) {
-    reply = "🥩 Absolutely! Here are the top steak restaurants in " + city + ":
+    reply = `🥩 Absolutely! Here are the top steak restaurants in ${city}:
 
-" +
-      "1. **Steakhouse 101** - 🔗 [Website](https://your-affiliate-link.com/steakhouse)
-" +
-      "2. **Prime Grill** - 📞 [Call](tel:+123456789)
-" +
-      "3. **The Meat Co.** - 🗺️ [Map](https://maps.google.com/?q=steak+" + encodeURIComponent(city) + ")";
+1. **Steakhouse 101** - 🔗 [Website](https://your-affiliate-link.com/steakhouse)
+2. **Prime Grill** - 📞 [Call](tel:+123456789)
+3. **The Meat Co.** - 🗺️ [Map](https://maps.google.com/?q=steak+${encodeURIComponent(city)})`;
   } else if (/astros|tickets|baseball/i.test(message)) {
-    reply = "⚾ Absolutely! Houston Astros tickets available:
+    reply = `⚾ Absolutely! Houston Astros tickets available:
 
-" +
-      "1. **Minute Maid Park** - 🎟️ [Buy Tickets](https://your-affiliate-ticket-link.com/astros)
-" +
-      "2. Need a ride? 🚗 [Book an Uber](https://your-affiliate-uber-link.com)";
+1. **Minute Maid Park** - 🎟️ [Buy Tickets](https://your-affiliate-ticket-link.com/astros)
+2. Need a ride? 🚗 [Book an Uber](https://your-affiliate-uber-link.com)`;
   } else {
-    reply = "🎉 You got it! Let me dig up the best options in " + city + " for that. Stay tuned...";
+    reply = `🎉 You got it! Let me dig up the best options in ${city} for that. Stay tuned...`;
   }
 
   return res.json({ reply });
