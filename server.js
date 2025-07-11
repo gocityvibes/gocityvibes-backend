@@ -6,7 +6,7 @@ const fetch = require('node-fetch');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -85,7 +85,11 @@ app.post('/chat', async (req, res) => {
   if (ticketKeywords.some(keyword => message.toLowerCase().includes(keyword)) && events.length > 0) {
     let reply = "";
     events.forEach((event, index) => {
-      reply += `\n${index + 1}. **${event.name}**\n[MAP:${event.address}|View Map]\n[CALL:${event.phone}|Call Venue]\n[WEB:${event.website}|Buy Tickets]\n`;
+      const address = event.address || 'Address not available';
+      const phone = event.phone || 'Phone not available';
+      const website = event.website || 'https://ticketmaster.com';
+
+      reply += `\n${index + 1}. **${event.name}**\n[MAP:${address}|View Map]\n[CALL:${phone}|Call Venue]\n[WEB:${website}|Buy Tickets]\n`;
     });
     return res.json({ reply });
   }
@@ -110,20 +114,14 @@ app.post('/events', async (req, res) => {
   res.json([...ticketmasterEvents, ...eventbriteEvents]);
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
-}) => {
-  console.log(`Server is running on port ${port}`);
-});
-
-
 app.get('/events', async (req, res) => {
   const city = req.query.city || 'Houston';
   const keyword = req.query.keyword || '';
-
   const ticketmasterEvents = await getTicketmasterEvents(city, keyword);
   const eventbriteEvents = await getEventbriteEvents(city);
-
   res.json([...ticketmasterEvents, ...eventbriteEvents]);
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });
