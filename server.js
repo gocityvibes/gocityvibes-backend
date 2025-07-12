@@ -1,54 +1,58 @@
 
 const express = require('express');
+const axios = require('axios');
 const cors = require('cors');
+const bodyParser = require('body-parser');
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-const PORT = process.env.PORT || 10000;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-function isVagueCity(city) {
-  const vagueCities = ['smithville', 'springfield', 'jackson', 'greenville'];
-  return vagueCities.includes(city.trim().toLowerCase());
-}
+app.post('/chat', async (req, res) => {
+    const { message, city, state } = req.body;
 
-app.post('/chat', (req, res) => {
-  const { message, city } = req.body;
+    // GPT handles everything, including fetching and formatting
+    const gptPrompt = `
+You are a friendly, luxury AI concierge. The user is in ${city}, ${state}.
+Handle everything: suggest real events, restaurants, concerts, and include ticket + Uber links.
 
-  if (!city) {
-    return res.json({ reply: "Please tell me which city and country you're in!" });
-  }
+Event API: Ticketmaster + Eventbrite
+Output Format:
+1. 🎤 Artist Name at Venue
+📍 Address
+🎫 [Buy Tickets](https://ticketmaster.com/abc?affiliate=YOURCODE)
+🚗 [Get a Ride](https://m.uber.com/?dropoff[formatted_address]=VENUE)
 
-  if (isVagueCity(city)) {
-    return res.json({ reply: "There are a few places called that! What state or country are you in?" });
-  }
+User message: ${message}
+    `;
 
-  let reply = "";
+    try {
+        const completion = await axios.post("https://api.openai.com/v1/chat/completions", {
+            model: "gpt-4",
+            messages: [{ role: "user", content: gptPrompt }],
+            temperature: 0.7
+        }, {
+            headers: {
+                "Authorization": `Bearer ${OPENAI_API_KEY}`,
+                "Content-Type": "application/json"
+            }
+        });
 
-  if (/steak|restaurant/i.test(message)) {
-    reply = `🥩 Absolutely! Here are the top steak restaurants in ${city}:
-
-1. **Steakhouse 101** - 🔗 [Website](https://your-affiliate-link.com/steakhouse)
-2. **Prime Grill** - 📞 [Call](tel:+123456789)
-3. **The Meat Co.** - 🗺️ [Map](https://maps.google.com/?q=steak+${encodeURIComponent(city)})`;
-  } else if (/astros|tickets|baseball/i.test(message)) {
-    reply = `⚾ Absolutely! Houston Astros tickets available:
-
-1. **Minute Maid Park** - 🎟️ [Buy Tickets](https://your-affiliate-ticket-link.com/astros)
-2. Need a ride? 🚗 [Book an Uber](https://your-affiliate-uber-link.com)`;
-  } else {
-    reply = `🎉 You got it! Let me dig up the best options in ${city} for that. Stay tuned...`;
-  }
-
-  return res.json({ reply });
+        res.json({ reply: completion.data.choices[0].message.content });
+    } catch (err) {
+        console.error(err.response?.data || err.message);
+        res.status(500).send("GPT Concierge error");
+    }
 });
 
-app.post('/signup', (req, res) => {
-  const { businessName, phone, email, city } = req.body;
-  console.log("📥 New Business Signup:", { businessName, phone, email, city });
-  res.json({ message: "Thanks! Our team will reach out shortly." });
+app.post('/signup', async (req, res) => {
+    const { businessName, phone, email, city } = req.body;
+    console.log("New advertiser inquiry:", { businessName, phone, email, city });
+    res.send("Thanks! Our team will reach out shortly.");
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ GCV Backend running on port ${PORT}`);
+    console.log(`Concierge server live on ${PORT}`);
 });
