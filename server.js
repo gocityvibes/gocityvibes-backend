@@ -1,14 +1,23 @@
-require('dotenv').config();
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const gptHandler = require('./gpt');
-
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+const port = process.env.PORT || 3000;
+require('dotenv').config();
 
-app.post('/chat', gptHandler);
+const gpt = require('./gpt');
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.use(express.json());
+
+app.post('/chat', async (req, res) => {
+    const { city, state, country, message } = req.body;
+    try {
+        const response = await gpt.handleMessage(message, city, state, country);
+        res.json(response);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Internal Server Error");
+    }
+});
+
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
