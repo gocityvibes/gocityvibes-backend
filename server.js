@@ -1,96 +1,66 @@
+
+require('dotenv').config();
 const express = require('express');
+const app = express();
 const cors = require('cors');
 const bodyParser = require('body-parser');
-require('dotenv').config();
-const { OpenAI } = require('openai');
 
-const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const sessionMemory = {};
-const priorityListings = {
-  tomball: [{
-    name: "Joe’s Bar",
-    type: "Bar",
-    days: ["Monday"],
-    special: "$2 drafts and live music",
-    address: "123 Main St, Tomball, TX",
-    phone: "(281) 555-1234",
-    website: "https://joesbartomball.com"
-  }],
-  katy: [{
-    name: "Mama Rosa’s Italian Bistro",
-    type: "Restaurant",
-    days: ["Friday"],
-    special: "2-for-1 pasta and $5 wine",
-    address: "555 Bellaire Blvd, Katy, TX",
-    phone: "(281) 555-9876",
-    website: "https://mamarosakaty.com"
-  }]
-};
+const GPT = require('./gpt');
 
 app.post('/api/gpt', async (req, res) => {
-  const { message, city = 'Houston', state = '', country = '', sessionId = 'default' } = req.body;
+    const { message, city, state, country } = req.body;
 
-  if (!sessionMemory[sessionId]) {
-    sessionMemory[sessionId] = {
-      preferences: [],
-      lastRecommendation: null
-    };
-  }
+    // Flight suggestion logic
+    if (/flight|ticket.*(to|from)/i.test(message)) {
+        const response = {
+            reply: `✈️ Here's a couple of flight options:
 
-  const today = new Date().toLocaleDateString('en-US', { weekday: 'long' });
-  const featured = priorityListings[city.toLowerCase()]?.filter(item => item.days.includes(today)) || [];
+` +
+                   `**Southwest Airlines**
+- Departure: Sunday 10:00 AM
+- Return: Monday 7:00 PM
+- Price: Starting at $150 round-trip
+🌐 [Book Your Flight](${process.env.FLIGHT_LINK})
 
-  const prompt = `
-You are the GoCityVibes Concierge AI.
-Location: ${city}, ${state}, ${country}
-Today is ${today}
-Featured Listings: ${featured.map(f => f.name + ' – ' + f.special).join(', ')}
+` +
+                   `**United Airlines**
+- Departure: Sunday 9:30 AM
+- Return: Monday 8:00 PM
+- Price: Starting at $175 round-trip
+🌐 [Book Your Flight](${process.env.FLIGHT_LINK})
 
-Instructions:
-- Use your own access to fetch real events, restaurants, music, shows, hotels, and flights.
-- Inject affiliate codes from user for monetization:
-    - Ticketmaster: ?affiliate=${process.env.TICKETMASTER_CODE}
-    - Eventbrite: ?aff=${process.env.EVENTBRITE_CODE}
-    - StubHub: ?aid=${process.env.STUBHUB_CODE}
-    - Hotels: ?aid=${process.env.BOOKING_CODE}
-    - Flights: ?aff=${process.env.FLIGHTS_CODE}
-- Provide full details including name, location, time, and links:
-  - 📍 Google Maps
-  - 📞 Call
-  - 🌐 Website
-  - 🚗 Uber deep link
-- Add friendly tips if outdoor (e.g. sunscreen, umbrella) when weather is high or rainy.
-- Respond in a cool, helpful tone like a smart concierge.
-- Track user memory and offer follow-up like:
-  "How was that steak at Perry’s the other night?"
+` +
+                   `🚗 [Get an Uber](https://m.uber.com)`
+        };
+        return res.json(response);
+    }
 
-User said: "${message}"
-`;
+    // Hotel suggestion logic
+    if (/hotel|place to stay/i.test(message)) {
+        const response = {
+            reply: `🏨 Recommended Hotel:
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o",
-    messages: [
-      { role: "system", content: prompt },
-      { role: "user", content: message }
-    ],
-    temperature: 0.7
-  });
+` +
+                   `**The Post Oak Hotel at Uptown Houston**
+- Location: 1600 West Loop S, Houston, TX 77027
+` +
+                   `📍 [Google Maps](https://goo.gl/maps/9T5sE)
+📞 (844) 386-1600
+` +
+                   `🌐 [Book Now](${process.env.BOOKING_LINK})
+🚗 [Uber Ride](https://m.uber.com)`
+        };
+        return res.json(response);
+    }
 
-  sessionMemory[sessionId].lastRecommendation = message;
-  res.json({ reply: response.choices[0].message.content });
-});
-
-app.post('/api/adsignup', (req, res) => {
-  const adData = req.body;
-  console.log("New Ad Signup:", adData);
-  res.status(200).json({ message: "Ad signup received." });
+    // Fallback GPT response
+    const reply = await GPT.getResponse(message, city, state, country);
+    res.json({ reply });
 });
 
 app.listen(3000, () => {
-  console.log('GoCityVibes Affiliate Backend running on port 3000');
+    console.log('Server running on port 3000');
 });
