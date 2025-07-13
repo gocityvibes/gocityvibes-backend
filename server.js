@@ -40,6 +40,7 @@ Speak in a natural, conversational tone — like ChatGPT — and provide useful 
   }
 });
 
-app.listen(3000, () => {
-  console.log('Concierge backend running on port 3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log('Concierge backend running on port ' + PORT);
 });
