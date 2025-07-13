@@ -1,7 +1,7 @@
 
 const express = require('express');
 const cors = require('cors');
-const { OpenAI } = require('openai');
+const OpenAI = require('openai');
 
 const app = express();
 app.use(cors());
@@ -17,10 +17,10 @@ app.post('/chat', async (req, res) => {
     const userCity = req.body.city || '';
     const userLanguage = req.body.language || 'english';
 
-    const systemPrompt = \`
+    const systemPrompt = `
 You are a smart, friendly local concierge. Always respond in clean, formatted HTML with emojis, bold labels, helpful tips, and clickable links.
 Speak in a natural, conversational tone — like ChatGPT — and provide useful info for events, tickets, restaurants, music, etc.
-\`;
+`;
 
     const chatResponse = await openai.chat.completions.create({
       model: 'gpt-4',
